@@ -17,13 +17,41 @@ enum class TokenType {
     T_WHILE,
     //T_PRINT,
 
+
+
+    //NOVOS
+    T_FN,
+    T_LET,
+    T_MUT,
+    T_MATCH,
+    T_UL, // _
+    T_BANG, // !
+    T_REF, // &
+    T_COLON, // :
+    T_ARROW, // ->
+    T_FAT_ARROW, // =>
+    T_TYPE, // i32, i64, ...
+    /*
+     MUDAR:
+      SCANNER: 106
+      ANALISE DE SIM E OP: 227
+
+      Linha 275->279 acho que {} tem funcionalidade diferente em rust
+            -> Na mesma área tem adicionar para arrow, fat_arrow, bang, etc
+
+      Linha 226 delimita que se começar com letra ou underscore, tenta formar identificador. Não sei se
+      em Rust é igual
+     */
+
+
+
     // Identificadores e números
     T_ID,
     T_NUM,
-    T_TYPE,
+
 
     // Operadores de atribuição e comparação
-    //T_ASSIGN,
+    T_ASSIGN,
     T_EQ,
 
     // Operadores aritméticos
@@ -63,6 +91,11 @@ struct Token {
     }
 };
 
+// ========================================================================================
+// ====================================== SCANNER =========================================
+// ========================================================================================
+
+
 // Classe responsável por percorrer o código-fonte
 // e transformar caracteres em tokens.
 class Scanner {
@@ -85,11 +118,11 @@ public:
         : input(source), pos(0), line(1) {
 
         // Cadastro das palavras reservadas da linguagem
-        keywords["int"] = TokenType::T_INT;
+        //keywords["int"] = TokenType::T_INT;
         keywords["if"] = TokenType::T_IF;
         keywords["else"] = TokenType::T_ELSE;
         keywords["while"] = TokenType::T_WHILE;
-        keywords["print"] = TokenType::T_PRINT;
+        //keywords["print"] = TokenType::T_PRINT;
     }
 
     // Retorna o caractere atual sem avançar na leitura.
@@ -224,6 +257,7 @@ public:
 
             return Token(TokenType::T_DIV, "/", line);
 
+            //ASSIGN
         case '=':
 
             // Verifica se é "==" (igualdade)
@@ -296,12 +330,43 @@ string tokenTypeToString(TokenType type) {
 
     case TokenType::T_NUM:
         return "T_NUM";
+// ======================================================
+
+    case TokenType::T_FN:
+        return "T_FN";
+
+    case TokenType::T_LET:
+        return "T_LET";
+
+    case TokenType::T_MUT:
+        return "T_MUT";
+
+    case TokenType::T_MATCH:
+        return "T_MATCH";
+
+    case TokenType::T_UL:
+        return "T_UL";
+
+    case TokenType::T_BANG:
+        return "T_BANG";
+
+    case TokenType::T_REF:
+        return "T_REF";
+
+    case TokenType::T_COLON:
+        return "T_COLON";
+
+    case TokenType::T_ARROW:
+        return "T_ARROW";
+
+    case TokenType::T_FAT_ARROW:
+        return "T_FAT_ARROW";
 
     case TokenType::T_TYPE:
         return "T_TYPE";
-
-    // case TokenType::T_ASSIGN:
-    //     return "T_ASSIGN";
+// ======================================================
+    case TokenType::T_ASSIGN:
+        return "T_ASSIGN";
 
     case TokenType::T_EQ:
         return "T_EQ";
@@ -346,7 +411,9 @@ string tokenTypeToString(TokenType type) {
         return "UNKNOWN";
     }
 }
-
+// ========================================================================================
+// ========================================= MAIN =========================================
+// ========================================================================================
 int main() {
 
     // Código-fonte de exemplo que será analisado.
