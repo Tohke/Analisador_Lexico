@@ -15,7 +15,7 @@ enum class TokenType {
     T_IF,
     T_ELSE,
     T_WHILE,
-    //T_PRINT,
+    T_PRINTLN,
 
 
 
@@ -124,8 +124,7 @@ public:
         keywords["if"] = TokenType::T_IF;
         keywords["else"] = TokenType::T_ELSE;
         keywords["while"] = TokenType::T_WHILE;
-        //keywords["print"] = TokenType::T_PRINT;
-
+        keywords["println"] = TokenType::T_PRINTLN;
 
         // Novas palavras para Rust
         keywords["let"] = TokenType::T_LET;
@@ -133,6 +132,18 @@ public:
         keywords["fn"] = TokenType::T_FN;
         keywords["match"] = TokenType::T_MATCH;
         keywords["_"] = TokenType::T_UL;
+
+        // Primitive Integer Types 
+        keywords["i32"] = TokenType::T_TYPE;     // Inteiro com sinal de 32 bits
+        keywords["u32"] = TokenType::T_TYPE;     // Inteiro sem sinal de 32 bits
+
+        // Floating Point Types
+        keywords["f32"] = TokenType::T_TYPE;     // Número decimal de 32 bits
+
+        // Primitive Basic Types
+        keywords["bool"] = TokenType::T_TYPE;    // Booleano (true ou false)
+        keywords["char"] = TokenType::T_TYPE;    // Caractere Unicode
+        keywords["str"]  = TokenType::T_TYPE;    // String slice imutável
     }
 
     // Retorna o caractere atual sem avançar na leitura.
@@ -186,12 +197,13 @@ public:
 
         // Coloca o primeiro dígito no buffer
         buffer += start;
-
+        char c = start;
+        
         // Continua enquanto encontrar outros dígitos
-        while (isdigit(peek())) {
+        while (isdigit(c) || c == '.') {
             buffer += next();
+            c = peek();
         }
-
         // Retorna um token numérico
         return Token(TokenType::T_NUM, buffer, line);
     }
@@ -468,6 +480,9 @@ string tokenTypeToString(TokenType type) {
 
     case TokenType::T_EOF:
         return "T_EOF";
+    
+    case TokenType::T_PRINTLN:
+        return "T_PRINTLN";
 
     default:
         return "UNKNOWN";
@@ -483,7 +498,10 @@ int main() {
     // Passado para rust
     string code = R"(
 
-    let soma = 10 + 20;
+    let num1: f32 = 10;
+    let num2 = 20;
+
+    let soma = num1 + num2;
 
         if soma == 30 {
             println!("{}", soma);
