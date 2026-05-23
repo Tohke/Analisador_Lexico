@@ -31,6 +31,8 @@ enum class TokenType {
     T_ARROW, // ->
     T_FAT_ARROW, // =>
     T_TYPE, // i32, i64, ...
+    T_STRING, // {}
+    T_COMMA, // ,
     /*
      MUDAR:
       SCANNER: 106
@@ -123,6 +125,14 @@ public:
         keywords["else"] = TokenType::T_ELSE;
         keywords["while"] = TokenType::T_WHILE;
         //keywords["print"] = TokenType::T_PRINT;
+
+
+        // Novas palavras para Rust
+        keywords["let"] = TokenType::T_LET;
+        keywords["mut"] = TokenType::T_MUT;
+        keywords["fn"] = TokenType::T_FN;
+        keywords["match"] = TokenType::T_MATCH;
+        keywords["_"] = TokenType::T_UL;
     }
 
     // Retorna o caractere atual sem avançar na leitura.
@@ -186,6 +196,29 @@ public:
         return Token(TokenType::T_NUM, buffer, line);
     }
 
+    // Lê o {}
+    Token scanString(){
+        string buffer = "\"";
+            // Continua lendo até encontrar a aspa de fechamento ou o fim do arquivo
+            while (peek() != '"' && peek() != '\0') {
+                buffer += next();
+            }
+            // Se encontrou a aspa final, consome ela e fecha o token
+            if (peek() == '"') {
+                buffer += next();
+            }
+
+            else {
+                // Se chegou no fim do arquivo sem fechar aspas, lança erro
+                throw runtime_error(
+                    "Erro Lexico: String nao fechada na linha " +
+                    to_string(line)
+                );
+            }
+            return Token(TokenType::T_STRING, buffer, line);
+        }
+
+
     // Lê identificadores ou palavras reservadas.
     // Um identificador pode conter letras, números e underscore.
     Token scanIdentifier(char start) {
@@ -233,7 +266,10 @@ public:
         if (isalpha(c) || c == '_') {
             return scanIdentifier(c);
         }
-
+        // Nova verificacão, se for aspas, tenta formar uma String
+        if(c == '"'){
+            return scanString();
+        }
         // Analisa símbolos e operadores
         switch (c) {
 
@@ -241,6 +277,10 @@ public:
             return Token(TokenType::T_PLUS, "+", line);
 
         case '-':
+            if (peek() == '>'){
+                next();
+                return Token(TokenType::T_ARROW, "->", line);
+            }
             return Token(TokenType::T_MINUS, "-", line);
 
         case '*':
@@ -266,8 +306,24 @@ public:
                 return Token(TokenType::T_EQ, "==", line);
             }
 
+            if (peek() == '>'){
+                next();
+                return Token(TokenType::T_FAT_ARROW, "=>", line);
+            }
             // Caso contrário, é "=" (atribuição)
             return Token(TokenType::T_ASSIGN, "=", line);
+
+        case '!':
+            return Token(TokenType::T_BANG, "!", line);
+
+        case '&':
+            return Token(TokenType::T_REF, "&", line);
+
+        case ':':
+            return Token(TokenType::T_REF, ":", line);
+
+        case ',':
+            return Token(TokenType::T_COMMA, ",", line);
 
         case '<':
             return Token(TokenType::T_LT, "<", line);
@@ -364,6 +420,12 @@ string tokenTypeToString(TokenType type) {
 
     case TokenType::T_TYPE:
         return "T_TYPE";
+
+    case TokenType::T_STRING:
+        return "T_STRING";
+
+    case TokenType::T_COMMA:
+        return "T_COMMA";
 // ======================================================
     case TokenType::T_ASSIGN:
         return "T_ASSIGN";
