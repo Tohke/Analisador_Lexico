@@ -189,6 +189,42 @@ public:
             next();
         }
     }
+    // Ignora comentários multilinha no formato /* ... */
+    // Suporta múltiplas linhas.
+    void skipMultilineComment() {
+
+        while (true) {
+
+            // Se chegar ao fim do arquivo antes de fechar o comentário
+            if (peek() == '\0') {
+                throw runtime_error(
+                    "Erro Lexico: comentario multilinha nao fechado na linha " +
+                    to_string(line)
+                );
+            }
+
+            // Conta quebras de linha
+            if (peek() == '\n') {
+                line++;
+            }
+
+            // Detecta fechamento */
+            if (peek() == '*') {
+
+                next(); // consome '*'
+
+                if (peek() == '/') {
+                    next(); // consome '/'
+                    break;
+                }
+
+                continue;
+            }
+
+            next();
+        }
+    }
+
 
     // Lê um número inteiro a partir do primeiro dígito já encontrado.
     Token scanNumber(char start) {
@@ -298,16 +334,29 @@ public:
         case '*':
             return Token(TokenType::T_MULT, "*", line);
 
-        case '/':
+       case '/':
 
-            // Se houver outro '/', então é comentário de linha
-            if (peek() == '/') {
-                next();           // consome o segundo '/'
-                skipComment();    // ignora o restante da linha
-                return nextToken(); // busca o próximo token válido
-            }
+    // Comentário de linha //
+    if (peek() == '/') {
 
-            return Token(TokenType::T_DIV, "/", line);
+        next(); // consome o segundo /
+
+        skipComment();
+
+        return nextToken();
+    }
+
+    // Comentário multilinha /* ... */
+    if (peek() == '*') {
+
+        next(); // consome o *
+
+        skipMultilineComment();
+
+        return nextToken();
+    }
+
+    return Token(TokenType::T_DIV, "/", line);
 
             //ASSIGN
         case '=':
@@ -506,8 +555,12 @@ int main() {
         if soma == 30 {
             println!("{}", soma);
         }
-// comentario ignorado
+    /*
+    comentario
+    multilinha
+    */
 
+    //comentario
 )";
 
     // Cria o scanner com o código de entrada
