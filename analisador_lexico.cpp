@@ -246,9 +246,18 @@ public:
             // Continua lendo até encontrar a aspa de fechamento ou o fim do arquivo
             while (peek() != '"' && peek() != '\0') {
 
+                if (peek() == '}'){
+                    // Se encontrou um } ser abrir um {
+                    throw runtime_error(
+                        "Erro Lexico: placeholder invalido na linha " +
+                        to_string(line)
+                    );
+                }
+
                 // Verifica placeholder {}
                 if (peek() == '{') {
                     buffer += next(); // consome {
+
                     if (peek() == '}') {
                         buffer += next(); // consome }
                         continue;
@@ -559,8 +568,8 @@ int main() {
 
     if soma == 30 {
         println!("{}", soma);
+    
     }
-
     /*
 
     let numf = 2.5;         // Float correto
