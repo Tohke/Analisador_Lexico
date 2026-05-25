@@ -133,7 +133,7 @@ public:
         keywords["match"] = TokenType::T_MATCH;
         keywords["_"] = TokenType::T_UL;
 
-        // Primitive Integer Types 
+        // Primitive Integer Types
         keywords["i32"] = TokenType::T_TYPE;     // Inteiro com sinal de 32 bits
         keywords["u32"] = TokenType::T_TYPE;     // Inteiro sem sinal de 32 bits
 
@@ -234,9 +234,16 @@ public:
         // Coloca o primeiro dígito no buffer
         buffer += start;
         char c = start;
-        
+        bool isFloat = false;
+
         // Continua enquanto encontrar outros dígitos
         while (isdigit(c) || c == '.') {
+            if(c == '.'){
+                if(isFloat){
+                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha " + to_string(line));
+                }
+                isFloat = true;
+            }
             buffer += next();
             c = peek();
         }
@@ -529,7 +536,7 @@ string tokenTypeToString(TokenType type) {
 
     case TokenType::T_EOF:
         return "T_EOF";
-    
+
     case TokenType::T_PRINTLN:
         return "T_PRINTLN";
 
@@ -547,8 +554,8 @@ int main() {
     // Passado para rust
     string code = R"(
 
-    let num1: f32 = 10;
-    let num2 = 20;
+    let num1: f32 = 10.5;
+    let num2 = 20.3.3;
 
     let soma = num1 + num2;
 
