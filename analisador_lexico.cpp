@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <stdexcept>
 #include <cctype>
+#include <iomanip>
 
 using namespace std;
 
@@ -14,37 +15,26 @@ enum class TokenType {
     T_IF,
     T_ELSE,
     T_WHILE,
-    T_PRINTLN, // Modificado
+    T_PRINTLN,  // Modificado
 
     //NOVOS
     T_FN,
     T_LET,
     T_MUT,
     T_MATCH,
-    T_UL, // _
-    T_BANG, // !
-    T_REF, // &
-    T_COLON, // :
-    T_ARROW, // ->
-    T_FAT_ARROW, // =>
-    T_TYPE, // i32, i64, ...
-    T_STRING, // {}
-    T_COMMA, // ,
-    /*
-     MUDAR:
-      SCANNER: 106
-      ANALISE DE SIM E OP: 227
-
-      Linha 275->279 acho que {} tem funcionalidade diferente em rust
-            -> Na mesma área tem adicionar para arrow, fat_arrow, bang, etc
-
-      Linha 226 delimita que se começar com letra ou underscore, tenta formar identificador. Não sei se
-      em Rust é igual
-     */
-
+    T_UL,       // _
+    T_BANG,     // !
+    T_REF,      // &
+    T_COLON,    // :
+    T_ARROW,    // ->
+    T_FAT_ARROW,// =>
+    T_STRING,   
+    T_COMMA,    // ,
+    
     // Identificadores e números
-    T_ID,
+    T_ID,       //Nome de variavel
     T_NUM,
+    T_TYPE,     // i32, i64, ...
 
     // Operadores de atribuição e comparação
     T_ASSIGN,
@@ -182,6 +172,7 @@ public:
             next();
         }
     }
+
     // Ignora comentários multilinha no formato /* ... */
     // Suporta múltiplas linhas.
     void skipMultilineComment() {
@@ -218,7 +209,6 @@ public:
         }
     }
 
-
     // Lê um número inteiro a partir do primeiro dígito já encontrado.
     Token scanNumber(char start) {
 
@@ -235,7 +225,8 @@ public:
             // Garantir que não tenha dois pontos em um float
             if(c == '.'){
                 if(isFloat){
-                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha " + to_string(line)); 
+                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha " 
+                        + to_string(line)); 
                 }
                 isFloat = true;
             }
@@ -247,15 +238,32 @@ public:
         return Token(TokenType::T_NUM, buffer, line);
     }
 
-    // Lê o {}
+    // Lê o String
     Token scanString(){
+
         string buffer = "\"";
+
             // Continua lendo até encontrar a aspa de fechamento ou o fim do arquivo
             while (peek() != '"' && peek() != '\0') {
+
+                // Verifica placeholder {}
+                if (peek() == '{') {
+                    buffer += next(); // consome {
+                    if (peek() == '}') {
+                        buffer += next(); // consome }
+                        continue;
+                    }
+                    // Se abriu { e não fechou com }
+                    throw runtime_error(
+                        "Erro Lexico: placeholder invalido na linha " +
+                        to_string(line)
+                    );
+                }
                 buffer += next();
             }
             // Se encontrou a aspa final, consome ela e fecha o token
             if (peek() == '"') {
+
                 buffer += next();
             }
 
@@ -554,8 +562,10 @@ int main() {
     }
 
     /*
-    let numf = 2.5;        // Float correto
-    let numf2 = 2.5.5      // Gera erro
+
+    let numf = 2.5;         // Float correto
+    let numf2 = 2.5.5       // Gera erro
+
     */
 
     )";
@@ -572,20 +582,16 @@ int main() {
         while (token.type != TokenType::T_EOF) {
 
             // Exibe o tipo do token, o lexema e a linha correspondente
-            cout
-                << tokenTypeToString(token.type)
-                << " -> "
-                << token.lexeme
-                << " (linha "
-                << token.line
-                << ")"
-                << endl;
+            cout << "--------------------------------------\n"
+                 << "| Token  : " << tokenTypeToString(token.type) << '\n'
+                 << "| Lexeme : " << token.lexeme << '\n'
+                 << "| Linha  : " << token.line << '\n'
+                 << "--------------------------------------\n\n";
 
             // Busca o próximo token
             token = scanner.nextToken();
         }
 
-        cout << endl;
         cout << "Fim da analise lexica." << endl;
 
     }
