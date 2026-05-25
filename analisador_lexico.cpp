@@ -11,13 +11,10 @@ using namespace std;
 enum class TokenType {
 
     // Palavras reservadas
-    //T_INT,
     T_IF,
     T_ELSE,
     T_WHILE,
-    T_PRINTLN,
-
-
+    T_PRINTLN, // Modificado
 
     //NOVOS
     T_FN,
@@ -45,12 +42,9 @@ enum class TokenType {
       em Rust é igual
      */
 
-
-
     // Identificadores e números
     T_ID,
     T_NUM,
-
 
     // Operadores de atribuição e comparação
     T_ASSIGN,
@@ -120,7 +114,6 @@ public:
         : input(source), pos(0), line(1) {
 
         // Cadastro das palavras reservadas da linguagem
-        //keywords["int"] = TokenType::T_INT;
         keywords["if"] = TokenType::T_IF;
         keywords["else"] = TokenType::T_ELSE;
         keywords["while"] = TokenType::T_WHILE;
@@ -238,12 +231,15 @@ public:
 
         // Continua enquanto encontrar outros dígitos
         while (isdigit(c) || c == '.') {
+
+            // Garantir que não tenha dois pontos em um float
             if(c == '.'){
                 if(isFloat){
-                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha " + to_string(line));
+                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha " + to_string(line)); 
                 }
                 isFloat = true;
             }
+
             buffer += next();
             c = peek();
         }
@@ -272,7 +268,6 @@ public:
             }
             return Token(TokenType::T_STRING, buffer, line);
         }
-
 
     // Lê identificadores ou palavras reservadas.
     // Um identificador pode conter letras, números e underscore.
@@ -434,9 +429,6 @@ string tokenTypeToString(TokenType type) {
 
     switch(type) {
 
-    // case TokenType::T_INT:
-    //     return "T_INT";
-
     case TokenType::T_IF:
         return "T_IF";
 
@@ -446,8 +438,8 @@ string tokenTypeToString(TokenType type) {
     case TokenType::T_WHILE:
         return "T_WHILE";
 
-    // case TokenType::T_PRINT:
-    //     return "T_PRINT";
+    case TokenType::T_PRINTLN:
+        return "T_PRINTLN";
 
     case TokenType::T_ID:
         return "T_ID";
@@ -455,7 +447,6 @@ string tokenTypeToString(TokenType type) {
     case TokenType::T_NUM:
         return "T_NUM";
 // ======================================================
-
     case TokenType::T_FN:
         return "T_FN";
 
@@ -537,16 +528,15 @@ string tokenTypeToString(TokenType type) {
     case TokenType::T_EOF:
         return "T_EOF";
 
-    case TokenType::T_PRINTLN:
-        return "T_PRINTLN";
-
     default:
         return "UNKNOWN";
     }
 }
+
 // ========================================================================================
 // ========================================= MAIN =========================================
 // ========================================================================================
+
 int main() {
 
     // Código-fonte de exemplo que será analisado.
@@ -554,21 +544,21 @@ int main() {
     // Passado para rust
     string code = R"(
 
-    let num1: f32 = 10.5;
-    let num2 = 20.3.3;
+    let num1: i32 = 10;     // Declaração usando identificador
+    let num2 = 20;          // Declaração implicida
 
     let soma = num1 + num2;
 
-        if soma == 30 {
-            println!("{}", soma);
-        }
+    if soma == 30 {
+        println!("{}", soma);
+    }
+
     /*
-    comentario
-    multilinha
+    let numf = 2.5;        // Float correto
+    let numf2 = 2.5.5      // Gera erro
     */
 
-    //comentario
-)";
+    )";
 
     // Cria o scanner com o código de entrada
     Scanner scanner(code);
