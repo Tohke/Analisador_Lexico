@@ -28,9 +28,9 @@ enum class TokenType {
     T_COLON,    // :
     T_ARROW,    // ->
     T_FAT_ARROW,// =>
-    T_STRING,   
+    T_STRING,
     T_COMMA,    // ,
-    
+
     // Identificadores e números
     T_ID,       //Nome de variavel
     T_NUM,
@@ -225,8 +225,8 @@ public:
             // Garantir que não tenha dois pontos em um float
             if(c == '.'){
                 if(isFloat){
-                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha " 
-                        + to_string(line)); 
+                    throw runtime_error("Erro Lexico: Float com dois pontos na Linha "
+                        + to_string(line));
                 }
                 isFloat = true;
             }
@@ -568,7 +568,7 @@ int main() {
 
     if soma == 30 {
         println!("{}", soma);
-    
+
     }
     /*
 
@@ -587,22 +587,39 @@ int main() {
         // Lê o primeiro token
         Token token = scanner.nextToken();
 
+        // TODO: Print retirado
         // Continua analisando até encontrar o fim da entrada
-        while (token.type != TokenType::T_EOF) {
+        // while (token.type != TokenType::T_EOF) {
 
-            // Exibe o tipo do token, o lexema e a linha correspondente
-            cout << "--------------------------------------\n"
-                 << "| Token  : " << tokenTypeToString(token.type) << '\n'
-                 << "| Lexeme : " << token.lexeme << '\n'
-                 << "| Linha  : " << token.line << '\n'
-                 << "--------------------------------------\n\n";
+        //     // Exibe o tipo do token, o lexema e a linha correspondente
+        //     cout << "--------------------------------------\n"
+        //          << "| Token  : " << tokenTypeToString(token.type) << '\n'
+        //          << "| Lexeme : " << token.lexeme << '\n'
+        //          << "| Linha  : " << token.line << '\n'
+        //          << "--------------------------------------\n\n";
 
-            // Busca o próximo token
-            token = scanner.nextToken();
-        }
+        //     // Busca o próximo token
+        //     token = scanner.nextToken();
+        // }
 
-        cout << "Fim da analise lexica." << endl;
+        // cout << "Fim da analise lexica." << endl;
+        vector<Token> tokens;
+                Token token = scanner.nextToken();
 
+                // 1. Coleta todos os tokens do código-fonte
+                while (token.type != TokenType::T_EOF) {
+                    tokens.push_back(token);
+                    token = scanner.nextToken();
+                }
+                tokens.push_back(token); // Adiciona o EOF de segurança no final da lista
+
+                // Inicia o Parser
+                Parser parser(tokens);
+                cout << "Iniciando a analise sintatica (Parsing)..." << endl;
+
+                parser.parseProgram();
+
+                cout << "Analise sintatica concluida com sucesso! Nenhum erro encontrado." << endl;
     }
     catch (exception& e) {
 
