@@ -3,7 +3,7 @@
 
 /*
 TODO: Falta implementar:
-    - parseAssignment(): Validação de atribuição de variáveis já declaradas (ex: soma = 30;).
+    - FEITO parseAssignment(): Validação de atribuição de variáveis já declaradas (ex: soma = 30;).
     - parsePrintStmt(): Adaptação da regra de impressão para o modelo do Rust (ex: validar a sintaxe exata de println!("{}", soma);).
     - parseIf(): Estrutura condicional. Diferente do MicroC original, em Rust não precisamos exigir parênteses ao redor da expressão, mas as chaves {} são estritamente obrigatórias.
     - parseWhile(): Laço de repetição, seguindo a mesma lógica de parênteses opcionais e chaves obrigatórias do if.
@@ -176,14 +176,123 @@ public:
         }
     }
     // ============================================== // ==============================================
-    void parseDeclaration() {}
-    void parseAssignment() {}
-    void parsePrintStmt() {}
-    void parseIf() {}
-    void parseWhile() {}
+    void parseAssignment() {
+        // Consome o nome da variável (identificador)
+        if (!match(TokenType::T_ID)) {
+            error("Esperado nome da variavel para atribuicao");
+        }
+
+        // Verifica se há o operador de atribuição '='
+        if (!match(TokenType::T_ASSIGN)) {
+            error("Esperado '=' apos o identificador");
+        }
+
+        // Chama a análise da expressão para o lado direito da igualdade
+        parseExpression();
+
+        // Toda atribuição deve terminar com ponto e vírgula
+        if (!match(TokenType::T_SEMICOLON)) {
+            error("Esperado ';' no final da instrucao de atribuicao");
+        }
+    }
+    // ============================================== // ==============================================
+    void parseIf() {
+        match(TokenType::T_IF); // Consome 'if'
+
+        // Avalia a expressão (condição). Em Rust, parênteses não são obrigatórios aqui.
+        parseExpression();
+
+        // O bloco do if deve obrigatoriamente começar com '{' em Rust
+        if (!match(TokenType::T_LBRACE)) {
+            error("Esperado '{' antes do bloco do if");
+        }
+
+        // Continua fazendo o parse de instruções até encontrar o fechamento '}'
+        while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
+            parseStatement();
+        }
+
+        if (!match(TokenType::T_RBRACE)) {
+            error("Esperado '}' apos o bloco do if");
+        }
+
+        // Verifica se há um bloco 'else' opcional
+        if (peek().type == TokenType::T_ELSE) {
+            advance(); // Consome 'else'
+
+            if (!match(TokenType::T_LBRACE)) {
+                error("Esperado '{' antes do bloco do else");
+            }
+
+            while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
+                parseStatement();
+            }
+
+            if (!match(TokenType::T_RBRACE)) {
+                error("Esperado '}' apos o bloco do else");
+            }
+        }
+    }
+    // ============================================== // ==============================================
+    void parseWhile() {
+            match(TokenType::T_WHILE); // Consome 'while'
+
+            // Avalia a expressão que atua como condição de parada
+            parseExpression();
+
+            // Escopo do laço deve começar com '{'
+            if (!match(TokenType::T_LBRACE)) {
+                error("Esperado '{' antes do bloco do while");
+            }
+
+            // Faz o parse das instruções internas do laço
+            while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
+                parseStatement();
+            }
+
+            if (!match(TokenType::T_RBRACE)) {
+                error("Esperado '}' apos o bloco do while");
+            }
+        }
+// ============================================== // ==============================================
+void parsePrintStmt() {
+        match(TokenType::T_PRINTLN); // Consome 'println'
+
+        // Em Rust, println é uma macro, o que exige a exclamação
+        if (!match(TokenType::T_BANG)) {
+            error("Esperado '!' apos println");
+        }
+
+        if (!match(TokenType::T_LPAREN)) {
+            error("Esperado '(' apos println!");
+        }
+
+        // Exige uma string de formatação literal (ex: "{}")
+        if (!match(TokenType::T_STRING)) {
+            error("Esperado string de formatacao (ex: \"{}\")");
+        }
+
+        // Se houver uma vírgula, significa que há variáveis ou expressões a serem inseridas
+        if (peek().type == TokenType::T_COMMA) {
+            advance(); // Consome ','
+
+            // Avalia o que será impresso (pode ser uma variável ou uma conta matemática inteira)
+            parseExpression();
+        }
+
+        if (!match(TokenType::T_RPAREN)) {
+            error("Esperado ')' fechando o println!");
+        }
+
+        if (!match(TokenType::T_SEMICOLON)) {
+            error("Esperado ';' no final da instrucao println!");
+        }
+    }
+// ============================================== // ==============================================
+
 
     // Funções de Expressão Matemática
-    void parseExpression() {}
-    void parseTerm() {}
-    void parseFactor() {}
+    // void parseExpression() {}
+    // void parseTerm() {}
+    // void parseFactor() {}
 };
