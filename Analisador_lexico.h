@@ -247,4 +247,5 @@ inline string tokenTypeToString(TokenType type) {
         case TokenType::T_EOF: return "T_EOF";
         default: return "UNKNOWN";
     }
+
 }
