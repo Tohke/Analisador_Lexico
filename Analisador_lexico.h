@@ -12,15 +12,44 @@ using namespace std;
 
 // Enumeração que representa todos os tipos de tokens
 enum class TokenType {
-    T_IF, T_ELSE, T_WHILE, T_PRINTLN,
-    T_FN, T_LET, T_MUT, T_MATCH, T_UL, T_BANG, T_REF, T_COLON,
-    T_ARROW, T_FAT_ARROW, T_STRING, T_COMMA,
-    T_ID, T_NUM, T_TYPE,
-    T_ASSIGN, T_EQ,
-    T_PLUS, T_MINUS, T_MULT, T_DIV,
-    T_LT, T_GT,
-    T_LPAREN, T_RPAREN, T_LBRACE, T_RBRACE, T_SEMICOLON,
-    T_EOF
+    T_IF, 
+    T_ELSE, 
+    T_WHILE, 
+    T_PRINTLN,
+    T_FN, 
+    T_LET, 
+    T_MUT, 
+    T_MATCH, 
+    T_UL, 
+    T_BANG, 
+    T_REF, 
+    T_COLON,
+    T_ARROW, 
+    T_FAT_ARROW, 
+    T_STRING, 
+    T_COMMA,
+    T_ID, 
+    T_NUM, 
+    T_TYPE,
+    T_ASSIGN, 
+    T_EQ,
+    T_PLUS, 
+    T_MINUS, 
+    T_MULT, 
+    T_DIV,
+    T_LT, 
+    T_GT,
+    T_LPAREN, 
+    T_RPAREN, 
+    T_LBRACE, 
+    T_RBRACE, 
+    T_SEMICOLON,
+    T_EOF,
+    T_LE,
+    T_GE,
+    T_NE,
+    T_AND,
+    T_OR
 };
 
 // Estrutura que representa um token
@@ -193,12 +222,38 @@ public:
                 return Token(TokenType::T_FAT_ARROW, "=>", line);
             }
             return Token(TokenType::T_ASSIGN, "=", line);
-        case '!': return Token(TokenType::T_BANG, "!", line);
-        case '&': return Token(TokenType::T_REF, "&", line);
+        case '!': 
+            if(peek() == '='){
+                next();
+                return Token(TokenType::T_NE, "!=", line);
+            } else return Token(TokenType::T_BANG, "!", line);
+        case '&': 
+            if(peek() == '&'){
+                next();
+                return Token(TokenType::T_AND, "&&", line);
+            }
+            else return Token(TokenType::T_REF, "&", line);
+        case '|':
+            if(peek() == '|'){
+                next();
+                return Token(TokenType::T_OR, "||", line);
+            }
+            else {
+                throw runtime_error("Erro Lexico: caractere Esperado: |, caracter encontrado" + to_string(peek()) + " na linha " + to_string(line));
+            }
         case ':': return Token(TokenType::T_COLON, ":", line); // Corrigido de T_REF para T_COLON
         case ',': return Token(TokenType::T_COMMA, ",", line);
-        case '<': return Token(TokenType::T_LT, "<", line);
-        case '>': return Token(TokenType::T_GT, ">", line);
+        case '<':
+            if(peek() == '='){
+                next();
+                return Token(TokenType::T_LE, "<=", line);
+            } else return Token(TokenType::T_LT, "<", line);
+        case '>': 
+            if(peek() == '='){
+                next();
+                return Token(TokenType::T_GE, ">=", line);
+            } else return Token(TokenType::T_GT, ">", line);
+        
         case '(': return Token(TokenType::T_LPAREN, "(", line);
         case ')': return Token(TokenType::T_RPAREN, ")", line);
         case '{': return Token(TokenType::T_LBRACE, "{", line);

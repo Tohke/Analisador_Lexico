@@ -118,7 +118,9 @@ public:
     shared_ptr<ASTNode> parseExpression() {
         auto left = parseAdditive();
         TokenType type = peek().type;
-        if (type == TokenType::T_EQ || type == TokenType::T_LT || type == TokenType::T_GT) {
+        if (type == TokenType::T_EQ || type == TokenType::T_LT || type == TokenType::T_GT 
+            || type == TokenType::T_NE || type == TokenType::T_GE || type == TokenType::T_LE 
+            || type == TokenType::T_AND || type == TokenType::T_OR || type == TokenType::T_BANG) {
             Token op = advance();
             auto node = make_shared<ASTNode>("Condition: " + op.lexeme);
             node->addChild(left);
@@ -229,7 +231,6 @@ public:
     }
 
     shared_ptr<ASTNode> parseAssignment() {
-        // Atribuição pura sem a palavra let
         auto node = make_shared<ASTNode>("Assignment");
         
         shared_ptr<ASTNode> varNode = nullptr;
@@ -350,7 +351,7 @@ int main() {
     let num2 = 20;          
     let soma = num1 + num2;
 
-    if soma => 30 {
+    if soma >= 30 {
         println!("{}", soma);
     }
     )";
