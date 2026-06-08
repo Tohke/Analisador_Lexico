@@ -4,8 +4,7 @@
 #include <stdexcept>
 #include <memory>
 
-// Certifique-se de que o nome do arquivo bate exatamente com o seu arquivo do Scanner
-#include "Analisador_lexico.h" 
+#include "Analisador_lexico.h"
 
 using namespace std;
 
@@ -13,8 +12,8 @@ using namespace std;
 // ESTRUTURA DA ÁRVORE SINTÁTICA ABSTRATA (AST)
 // =====================================================================
 struct ASTNode {
-    string type;                     
-    string value;                    
+    string type;
+    string value;
     vector<shared_ptr<ASTNode>> children;
 
     ASTNode(string t, string v = "") : type(t), value(v) {}
@@ -29,7 +28,7 @@ void printAST(const shared_ptr<ASTNode>& node, string indent = "", bool isLast =
     if (!node) return;
 
     cout << indent;
-    
+
     if (!indent.empty()) {
         if (isLast) {
             cout << "|__ ";
@@ -37,7 +36,7 @@ void printAST(const shared_ptr<ASTNode>& node, string indent = "", bool isLast =
             cout << "|-- ";
         }
     } else {
-        cout << "- "; 
+        cout << "- ";
     }
 
     cout << node->type;
@@ -50,13 +49,21 @@ void printAST(const shared_ptr<ASTNode>& node, string indent = "", bool isLast =
     if (!indent.empty()) {
         newIndent += isLast ? "    " : "|   ";
     } else {
-        newIndent += "  "; 
+        newIndent += "  ";
     }
 
     for (size_t i = 0; i < node->children.size(); ++i) {
         printAST(node->children[i], newIndent, i == node->children.size() - 1);
     }
 }
+// =====================================================================
+// PANIC MODE
+// =====================================================================
+//
+class panicMode : public runtime_error{
+    public:
+        panicMode(const string& mensagem) : runtime_error(mensagem){}
+};
 
 // =====================================================================
 // CLASSE PARSER (RETORNANDO NÓS DA AST)
@@ -89,19 +96,60 @@ public:
 
     void error(string message) {
         Token t = peek();
-        throw runtime_error(
+        throw panicMode(
             "Erro Sintatico: " + message +
             " (Token: '" + t.lexeme + "') na linha " + to_string(t.line)
         );
     }
 
-    shared_ptr<ASTNode> parseProgram() {
-        auto node = make_shared<ASTNode>("Program");
-        while (peek().type != TokenType::T_EOF) {
-            node->addChild(parseStatement());
+    // Motor do Panic Mode -> Recupera o parser de um estado de erro
+    void synchronize() {
+            advance(); // Consome o token que causou o problema inicial
+
+            while (peek().type != TokenType::T_EOF) {
+                // Se o token anterior foi um ponto e vírgula, a próxima instrução é segura
+                if (tokens[pos - 1].type == TokenType::T_SEMICOLON) {
+                    return;
+                }
+
+                // Se o token atual é o início de uma nova estrutura, é seguro recomeçar
+                switch (peek().type) {
+                    case TokenType::T_LET:
+                    case TokenType::T_IF:
+                    case TokenType::T_WHILE:
+                    case TokenType::T_PRINTLN:
+                    case TokenType::T_RBRACE:
+                        return;
+                    default:
+                        advance(); // O token não é seguro, descarta e continua procurando
+                }
+            }
         }
-        return node;
-    }
+
+        shared_ptr<ASTNode> parseProgram() {
+            auto node = make_shared<ASTNode>("Program");
+            bool hasErrors = false;
+
+            while (peek().type != TokenType::T_EOF) {
+                try {
+                    // Tenta fazer o parse da instrução e adicionar à AST
+                    node->addChild(parseStatement());
+                } catch (panicMode& e) { // Ativa o Panic Mode
+                    // Imprime o erro no console
+                    cerr << e.what() << "\n";
+                    hasErrors = true;
+
+                    // Descarta o "lixo" até o próximo ponto seguro
+                    synchronize();
+                }
+            }
+
+            if (hasErrors) {
+                cout << "\n[Aviso] A AST foi gerada parcialmente devido a erros sintaticos.\n";
+            }
+
+            return node;
+            }
 
     shared_ptr<ASTNode> parseAdditive() {
         auto left = parseTerm();
@@ -110,7 +158,7 @@ public:
             auto node = make_shared<ASTNode>("Op: " + op.lexeme);
             node->addChild(left);
             node->addChild(parseTerm());
-            left = node; 
+            left = node;
         }
         return left;
     }
@@ -118,8 +166,8 @@ public:
     shared_ptr<ASTNode> parseExpression() {
         auto left = parseAdditive();
         TokenType type = peek().type;
-        if (type == TokenType::T_EQ || type == TokenType::T_LT || type == TokenType::T_GT 
-            || type == TokenType::T_NE || type == TokenType::T_GE || type == TokenType::T_LE 
+        if (type == TokenType::T_EQ || type == TokenType::T_LT || type == TokenType::T_GT
+            || type == TokenType::T_NE || type == TokenType::T_GE || type == TokenType::T_LE
             || type == TokenType::T_AND || type == TokenType::T_OR || type == TokenType::T_BANG) {
             Token op = advance();
             auto node = make_shared<ASTNode>("Condition: " + op.lexeme);
@@ -167,21 +215,21 @@ public:
     shared_ptr<ASTNode> parseDeclaration() {
         // Agora o pai é a ação de atribuição "LetAssignment"
         auto node = make_shared<ASTNode>("LetAssignment");
-        match(TokenType::T_LET); 
-        
+        match(TokenType::T_LET);
+
         string varModifier = "";
         if (peek().type == TokenType::T_MUT) {
             varModifier = "[mut] ";
             advance();
         }
-        
+
         shared_ptr<ASTNode> varNode = nullptr;
         if (peek().type == TokenType::T_ID) {
             varNode = make_shared<ASTNode>("Variable", varModifier + advance().lexeme);
         } else {
             error("Esperado nome da variavel apos 'let'");
         }
-        
+
         if (peek().type == TokenType::T_COLON) {
             advance();
             if (peek().type == TokenType::T_TYPE) {
@@ -190,17 +238,17 @@ public:
                 error("Esperado tipo da variavel apos ':'");
             }
         }
-        
+
         // Adiciona a Variável como o primeiro filho (ramo esquerdo)
         node->addChild(varNode);
 
         if (!match(TokenType::T_ASSIGN)) {
             error("Esperado '=' na declaracao");
         }
-        
+
         // Adiciona a Expressão de valor como o segundo filho (ramo direito)
         node->addChild(parseExpression());
-        
+
         if (!match(TokenType::T_SEMICOLON)) {
             error("Esperado ';' no final da declaracao");
         }
@@ -232,24 +280,24 @@ public:
 
     shared_ptr<ASTNode> parseAssignment() {
         auto node = make_shared<ASTNode>("Assignment");
-        
+
         shared_ptr<ASTNode> varNode = nullptr;
         if (peek().type == TokenType::T_ID) {
             varNode = make_shared<ASTNode>("Variable", advance().lexeme);
         } else {
             error("Esperado nome da variavel para atribuicao");
         }
-        
+
         // Variável vira o filho esquerdo
         node->addChild(varNode);
 
         if (!match(TokenType::T_ASSIGN)) {
             error("Esperado '=' apos o nome da variavel");
         }
-        
+
         // Expressão de valor vira o filho direito
         node->addChild(parseExpression());
-        
+
         if (!match(TokenType::T_SEMICOLON)) {
             error("Esperado ';' no final da atribuicao");
         }
@@ -259,35 +307,35 @@ public:
     shared_ptr<ASTNode> parseIf() {
         auto node = make_shared<ASTNode>("IfStatement");
         match(TokenType::T_IF);
-        
+
         node->addChild(parseExpression());
-        
+
         if (!match(TokenType::T_LBRACE)) {
             error("Esperado '{' para abrir o bloco do 'if'");
         }
-        
+
         auto thenBranch = make_shared<ASTNode>("ThenBlock");
         while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
             thenBranch->addChild(parseStatement());
         }
         node->addChild(thenBranch);
-        
+
         if (!match(TokenType::T_RBRACE)) {
             error("Esperado '}' para fechar o bloco do 'if'");
         }
-        
+
         if (peek().type == TokenType::T_ELSE) {
             advance();
             if (!match(TokenType::T_LBRACE)) {
                 error("Esperado '{' para abrir o bloco do 'else'");
             }
-            
+
             auto elseBranch = make_shared<ASTNode>("ElseBlock");
             while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
                 elseBranch->addChild(parseStatement());
             }
             node->addChild(elseBranch);
-            
+
             if (!match(TokenType::T_RBRACE)) {
                 error("Esperado '}' para fechar o bloco do 'else'");
             }
@@ -298,19 +346,19 @@ public:
     shared_ptr<ASTNode> parseWhile() {
         auto node = make_shared<ASTNode>("WhileStatement");
         match(TokenType::T_WHILE);
-        
+
         node->addChild(parseExpression());
-        
+
         if (!match(TokenType::T_LBRACE)) {
             error("Esperado '{' para abrir o bloco do 'while'");
         }
-        
+
         auto body = make_shared<ASTNode>("BodyBlock");
         while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
             body->addChild(parseStatement());
         }
         node->addChild(body);
-        
+
         if (!match(TokenType::T_RBRACE)) {
             error("Esperado '}' para fechar o bloco do 'while'");
         }
@@ -320,24 +368,24 @@ public:
     shared_ptr<ASTNode> parsePrintStmt() {
         auto node = make_shared<ASTNode>("PrintStatement");
         match(TokenType::T_PRINTLN);
-        
+
         if (!match(TokenType::T_BANG)) error("Esperado '!' apos 'println'");
         if (!match(TokenType::T_LPAREN)) error("Esperado '(' apos 'println!'");
-        
+
         if (peek().type == TokenType::T_STRING) {
             node->value = advance().lexeme;
         } else {
             error("Esperado string literal no 'println!'");
         }
-        
+
         if (peek().type == TokenType::T_COMMA) {
             advance();
             node->addChild(parseExpression());
         }
-        
+
         if (!match(TokenType::T_RPAREN)) error("Esperado ')' para fechar 'println!'");
         if (!match(TokenType::T_SEMICOLON)) error("Esperado ';' no final");
-        
+
         return node;
     }
 };
@@ -346,14 +394,40 @@ public:
 // FUNÇÃO PRINCIPAL (MAIN)
 // =====================================================================
 int main() {
+    // CÓDIGOS EXEMPLOS
+    /*  Código teste - Correto
     string code = R"(
-    let num1: i32 = 10;     
-    let num2 = 20;          
-    let soma = num1 + num2;
+        let num1: i32 = 10;
+        let num2 = 20;
+        let soma = num1 + num2;
 
-    if soma >= 30 {
+        if soma >= 30 {
+            println!("{}", soma);
+        }
+    )";
+
+    ====================================================
+    ====================================================
+
+    Código teste - Errado (Panic Mode)
+    string code = R"(
+    let num1: i32 = 10;
+    let num2 = ;        // Erro 1: Faltou o valor antes do ponto e vírgula
+    let soma = num1 + num2;
+    if soma >= 30         // Erro 2: Faltou a chave {
         println!("{}", soma);
     }
+    )";
+     */
+
+    string code = R"(
+        let num1: i32 = 10;
+        let num2 = 20;
+        let soma = num1 + num2;
+
+        if soma >= 30 {
+            println!("{}", soma);
+        }
     )";
 
     Scanner scanner(code);
@@ -375,7 +449,7 @@ int main() {
             tokens.push_back(token);
             token = scanner.nextToken();
         }
-        tokens.push_back(token); 
+        tokens.push_back(token);
 
         cout << "Fim da analise lexica sem erros.\n" << endl;
 
@@ -400,3 +474,5 @@ int main() {
 
     return 0;
 }
+
+// g++ Parser.cpp -o parser
