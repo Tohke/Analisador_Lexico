@@ -5,57 +5,12 @@
 #include <memory>
 
 #include "Analisador_lexico.h"
+#include "AST.h"
+#include "Analisador_semantico.h"
 
 using namespace std;
 
-// =====================================================================
-// ESTRUTURA DA ÁRVORE SINTÁTICA ABSTRATA (AST)
-// =====================================================================
-struct ASTNode {
-    string type;
-    string value;
-    vector<shared_ptr<ASTNode>> children;
 
-    ASTNode(string t, string v = "") : type(t), value(v) {}
-
-    void addChild(shared_ptr<ASTNode> child) {
-        if (child) children.push_back(child);
-    }
-};
-
-// Imprime a árvore utilizando os caracteres solicitados mantendo o alinhamento
-void printAST(const shared_ptr<ASTNode>& node, string indent = "", bool isLast = true) {
-    if (!node) return;
-
-    cout << indent;
-
-    if (!indent.empty()) {
-        if (isLast) {
-            cout << "|__ ";
-        } else {
-            cout << "|-- ";
-        }
-    } else {
-        cout << "- ";
-    }
-
-    cout << node->type;
-    if (!node->value.empty()) {
-        cout << " (" << node->value << ")";
-    }
-    cout << "\n";
-
-    string newIndent = indent;
-    if (!indent.empty()) {
-        newIndent += isLast ? "    " : "|   ";
-    } else {
-        newIndent += "  ";
-    }
-
-    for (size_t i = 0; i < node->children.size(); ++i) {
-        printAST(node->children[i], newIndent, i == node->children.size() - 1);
-    }
-}
 // =====================================================================
 // PANIC MODE
 // =====================================================================
@@ -418,17 +373,50 @@ int main() {
         println!("{}", soma);
     }
     )";
+    ====================================================
+    SEMANTICA CERTA
+    ====================================================
+    R"(
+            let limite: i32 = 5;
+            let mut contador: i32 = 0;
+            let passo = 1;
+
+            while contador < limite {
+                // Atribuição válida, pois 'contador' foi declarado com 'mut'
+                contador = contador + passo;
+            }
+
+            if contador == limite {
+                let mensagem_sucesso = 1;
+                println!("{}", contador);
+            } else {
+                let erro = 0;
+                println!("{}", erro);
+            }
+        )"
+        ====================================================
+        SEMANTICA ERRADA
+        ====================================================
+
      */
 
     string code = R"(
-        let num1: i32 = 10;
-        let num2 = 20;
-        let soma = num1 + num2;
+            let taxa: i32 = 10;
+            let mut total = 0;
 
-        if soma >= 30 {
-            println!("{}", soma);
-        }
-    )";
+            // ERRO 1: Tentativa de reatribuir valor a uma variável imutável
+            taxa = 20;
+
+            // ERRO 2: Uso de variável que nunca foi declarada ('desconto')
+            total = taxa - desconto;
+
+            // ERRO 3: Redeclaração da mesma variável no mesmo escopo
+            let total = 100;
+
+            if total > 0 {
+                println!("{}", total);
+            }
+        )";
 
     Scanner scanner(code);
     vector<Token> tokens;
@@ -461,6 +449,12 @@ int main() {
         shared_ptr<ASTNode> astRoot = parser.parseProgram();
 
         printAST(astRoot);
+        cout << "=========================================" << endl;
+        cout << "       FASE 3: ANALISE SEMANTICA         " << endl;
+        cout << "=========================================" << endl;
+
+        SemanticAnalyzer semanticAnalyzer;
+        semanticAnalyzer.analyze(astRoot);
 
         cout << "=========================================" << endl;
         cout << "Compilacao e Geracao da AST Concluidas!  " << endl;
@@ -472,6 +466,9 @@ int main() {
         cerr << e.what() << endl;
     }
 
+    cout << "=========================================" << endl;
+    cout << "Compilacao Concluida!                    " << endl;
+    cout << "=========================================" << endl;
     return 0;
 }
 

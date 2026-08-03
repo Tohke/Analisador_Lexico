@@ -130,7 +130,8 @@ public:
     Token scanNumber(char start) {
         string buffer;
         buffer += start;
-        char c = start;
+
+        char c = peek();
         bool isFloat = false;
 
         while (isdigit(c) || c == '.') {
