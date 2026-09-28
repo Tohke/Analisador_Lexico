@@ -118,18 +118,19 @@ void SemanticAnalyzer::visit(shared_ptr<ASTNode> node) {
         }
     }
     else if (node->type == "IfStatement" || node->type == "WhileStatement") {
-        // A condição (filho 0) deve ser avaliada no escopo externo
+        // A condição (filho 0) deve ser avaliada no escopo atual
         if (node->children.size() >= 1) visit(node->children[0]);
 
-        // Blocos de execução abrem um novo escopo
-        symTable.enterScope();
+        // Não abrimos o escopo aqui, delegamos para os blocos (ThenBlock, ElseBlock, BodyBlock)
         for (size_t i = 1; i < node->children.size(); ++i) {
             visit(node->children[i]);
         }
-        symTable.exitScope();
     }
     else if (node->type == "ThenBlock" || node->type == "ElseBlock" || node->type == "BodyBlock") {
+        // Blocos de execução abrem um novo escopo
+        symTable.enterScope();
         for (auto child : node->children) visit(child);
+        symTable.exitScope();
     }
     else if (node->type == "PrintStatement") {
         for (auto child : node->children) visit(child);

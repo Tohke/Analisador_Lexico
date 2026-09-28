@@ -6,6 +6,7 @@
 #include "AST.h"
 #include "Parser.h"
 #include "SemanticAnalyzer.h"
+#include "SDT.hpp"
 
 using namespace std;
 
@@ -132,6 +133,30 @@ int main() {
 
         SemanticAnalyzer semanticAnalyzer;
         semanticAnalyzer.analyze(astRoot);
+
+        cout << "=========================================" << endl;
+        cout << "       FASE 4: TRADUCAO SDT (RPN)        " << endl;
+        cout << "=========================================" << endl;
+
+        PostfixTranslator postfixTranslator;
+        postfixTranslator.generate(astRoot);
+        postfixTranslator.printOutput();
+
+        cout << "=========================================" << endl;
+        cout << "       FASE 5: TRADUCAO SDT (TAC)        " << endl;
+        cout << "=========================================" << endl;
+
+        TACTranslator tacTranslator;
+        tacTranslator.generate(astRoot);
+        tacTranslator.printInstructions();
+
+        cout << "=========================================" << endl;
+        cout << "       FASE 6: PRETTY PRINTER            " << endl;
+        cout << "=========================================" << endl;
+
+        PrettyPrinter prettyPrinter;
+        prettyPrinter.generate(astRoot);
+        prettyPrinter.printSource();
 
         cout << "=========================================" << endl;
         cout << "Compilacao e Geracao da AST Concluidas!  " << endl;

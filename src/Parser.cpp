@@ -98,7 +98,7 @@ shared_ptr<ASTNode> Parser::parseExpression() {
     TokenType type = peek().type;
     if (type == TokenType::T_EQ || type == TokenType::T_LT || type == TokenType::T_GT
         || type == TokenType::T_NE || type == TokenType::T_GE || type == TokenType::T_LE
-        || type == TokenType::T_AND || type == TokenType::T_OR || type == TokenType::T_BANG) {
+        || type == TokenType::T_AND || type == TokenType::T_OR) {
         Token op = advance();
         auto node = make_shared<ASTNode>("Condition: " + op.lexeme);
         node->addChild(left);
