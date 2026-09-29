@@ -5,6 +5,7 @@ std::string tokenTypeToString(TokenType type) {
         case TokenType::T_IF: return "T_IF";
         case TokenType::T_ELSE: return "T_ELSE";
         case TokenType::T_WHILE: return "T_WHILE";
+        case TokenType::T_FOR: return "T_FOR";
         case TokenType::T_PRINTLN: return "T_PRINTLN";
         case TokenType::T_ID: return "T_ID";
         case TokenType::T_NUM: return "T_NUM";

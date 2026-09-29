@@ -41,6 +41,7 @@ public:
     std::shared_ptr<ASTNode> parseAssignment();
     std::shared_ptr<ASTNode> parseIf();
     std::shared_ptr<ASTNode> parseWhile();
+    std::shared_ptr<ASTNode> parseFor();
     std::shared_ptr<ASTNode> parsePrintStmt();
 
     std::shared_ptr<ASTNode> parseExpression();

@@ -199,6 +199,9 @@ shared_ptr<ASTNode> Parser::parseStatement() {
     else if (type == TokenType::T_WHILE) {
         return parseWhile();
     }
+    else if (type == TokenType::T_FOR) {
+        return parseFor();
+    }
     else if (type == TokenType::T_ID) {
         return parseAssignment();
     }
@@ -206,6 +209,78 @@ shared_ptr<ASTNode> Parser::parseStatement() {
         error("Comando invalido ou expressao fora de contexto");
         return nullptr;
     }
+}
+
+shared_ptr<ASTNode> Parser::parseFor() {
+    auto node = make_shared<ASTNode>("ForStatement");
+    match(TokenType::T_FOR);
+
+    if (!match(TokenType::T_LPAREN)) {
+        error("Esperado '(' apos 'for'");
+    }
+
+    // init
+    if (peek().type == TokenType::T_LET) {
+        node->addChild(parseDeclaration());
+    } else if (peek().type == TokenType::T_ID) {
+        node->addChild(parseAssignment());
+    } else if (peek().type == TokenType::T_SEMICOLON) {
+        node->addChild(make_shared<ASTNode>("Empty"));
+        match(TokenType::T_SEMICOLON);
+    } else {
+        error("Esperado inicializacao no 'for'");
+    }
+
+    // cond
+    if (peek().type != TokenType::T_SEMICOLON) {
+        node->addChild(parseExpression());
+    } else {
+        node->addChild(make_shared<ASTNode>("Empty"));
+    }
+    if (!match(TokenType::T_SEMICOLON)) {
+        error("Esperado ';' apos condicao no 'for'");
+    }
+
+    // inc
+    if (peek().type != TokenType::T_RPAREN) {
+        // Incremento: id = expr
+        // Como o assignment espera um ';', e no for o incremento não tem ';',
+        // precisamos adaptar ou criar um parser pro incremento.
+        // parseAssignment() exige um ';'.
+        // Vamos parsear na mão
+        if (peek().type == TokenType::T_ID) {
+            auto incNode = make_shared<ASTNode>("Assignment");
+            auto varNode = make_shared<ASTNode>("Variable", advance().lexeme);
+            incNode->addChild(varNode);
+            if (!match(TokenType::T_ASSIGN)) error("Esperado '=' no incremento do 'for'");
+            incNode->addChild(parseExpression());
+            node->addChild(incNode);
+        } else {
+            error("Esperado incremento no 'for'");
+        }
+    } else {
+        node->addChild(make_shared<ASTNode>("Empty"));
+    }
+
+    if (!match(TokenType::T_RPAREN)) {
+        error("Esperado ')' apos incremento no 'for'");
+    }
+
+    if (!match(TokenType::T_LBRACE)) {
+        error("Esperado '{' para abrir o bloco do 'for'");
+    }
+
+    auto body = make_shared<ASTNode>("BodyBlock");
+    while (peek().type != TokenType::T_RBRACE && peek().type != TokenType::T_EOF) {
+        body->addChild(parseStatement());
+    }
+    node->addChild(body);
+
+    if (!match(TokenType::T_RBRACE)) {
+        error("Esperado '}' para fechar o bloco do 'for'");
+    }
+
+    return node;
 }
 
 shared_ptr<ASTNode> Parser::parseAssignment() {

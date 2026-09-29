@@ -9,6 +9,7 @@ Scanner::Scanner(string source) : input(std::move(source)), pos(0), line(1) {
     keywords["if"] = TokenType::T_IF;
     keywords["else"] = TokenType::T_ELSE;
     keywords["while"] = TokenType::T_WHILE;
+    keywords["for"] = TokenType::T_FOR;
     keywords["println"] = TokenType::T_PRINTLN;
     keywords["let"] = TokenType::T_LET;
     keywords["mut"] = TokenType::T_MUT;

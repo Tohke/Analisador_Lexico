@@ -18,6 +18,7 @@ public:
     virtual void visitPrintStatement(std::shared_ptr<ASTNode> node) = 0;
     virtual void visitIfStatement(std::shared_ptr<ASTNode> node) = 0;
     virtual void visitWhileStatement(std::shared_ptr<ASTNode> node) = 0;
+    virtual void visitForStatement(std::shared_ptr<ASTNode> node) = 0;
     virtual void visitOp(std::shared_ptr<ASTNode> node) = 0;
     virtual void visitCondition(std::shared_ptr<ASTNode> node) = 0;
     virtual void visitLiteralNumber(std::shared_ptr<ASTNode> node) = 0;
@@ -32,6 +33,7 @@ public:
         else if (node->type == "PrintStatement") visitPrintStatement(node);
         else if (node->type == "IfStatement") visitIfStatement(node);
         else if (node->type == "WhileStatement") visitWhileStatement(node);
+        else if (node->type == "ForStatement") visitForStatement(node);
         else if (node->type.find("Op:") == 0) visitOp(node);
         else if (node->type.find("Condition:") == 0) visitCondition(node);
         else if (node->type == "LiteralNumber") visitLiteralNumber(node);
@@ -62,6 +64,7 @@ public:
     void visitPrintStatement(std::shared_ptr<ASTNode> node) override;
     void visitIfStatement(std::shared_ptr<ASTNode> node) override;
     void visitWhileStatement(std::shared_ptr<ASTNode> node) override;
+    void visitForStatement(std::shared_ptr<ASTNode> node) override;
     void visitOp(std::shared_ptr<ASTNode> node) override;
     void visitCondition(std::shared_ptr<ASTNode> node) override;
     void visitLiteralNumber(std::shared_ptr<ASTNode> node) override;
@@ -95,6 +98,7 @@ public:
     void visitPrintStatement(std::shared_ptr<ASTNode> node) override;
     void visitIfStatement(std::shared_ptr<ASTNode> node) override;
     void visitWhileStatement(std::shared_ptr<ASTNode> node) override;
+    void visitForStatement(std::shared_ptr<ASTNode> node) override;
     void visitOp(std::shared_ptr<ASTNode> node) override;
     void visitCondition(std::shared_ptr<ASTNode> node) override;
     void visitLiteralNumber(std::shared_ptr<ASTNode> node) override;
@@ -122,6 +126,7 @@ public:
     void visitPrintStatement(std::shared_ptr<ASTNode> node) override;
     void visitIfStatement(std::shared_ptr<ASTNode> node) override;
     void visitWhileStatement(std::shared_ptr<ASTNode> node) override;
+    void visitForStatement(std::shared_ptr<ASTNode> node) override;
     void visitOp(std::shared_ptr<ASTNode> node) override;
     void visitCondition(std::shared_ptr<ASTNode> node) override;
     void visitLiteralNumber(std::shared_ptr<ASTNode> node) override;

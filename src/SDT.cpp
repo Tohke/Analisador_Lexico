@@ -59,6 +59,10 @@ void PostfixTranslator::visitWhileStatement(shared_ptr<ASTNode> node) {
     for (auto child : node->children) visit(child);
 }
 
+void PostfixTranslator::visitForStatement(shared_ptr<ASTNode> node) {
+    for (auto child : node->children) visit(child);
+}
+
 void PostfixTranslator::visitOp(shared_ptr<ASTNode> node) {
     if (node->children.size() >= 1) visit(node->children[0]);
     if (node->children.size() >= 2) visit(node->children[1]);
@@ -193,6 +197,34 @@ void TACTranslator::visitWhileStatement(shared_ptr<ASTNode> node) {
     emit("ifFalse " + condPlace + " goto " + l_end);
 
     if (node->children.size() >= 2) visit(node->children[1]); // BodyBlock
+
+    emit("goto " + l_start);
+    emit(l_end + ":");
+}
+
+void TACTranslator::visitForStatement(shared_ptr<ASTNode> node) {
+    if (node->children.size() >= 1 && node->children[0]->type != "Empty") {
+        visit(node->children[0]); // Init
+    }
+
+    string l_start = newLabel();
+    string l_end = newLabel();
+    
+    emit(l_start + ":");
+
+    if (node->children.size() >= 2 && node->children[1]->type != "Empty") {
+        visit(node->children[1]); // Cond
+        string condPlace = lastPlace;
+        emit("ifFalse " + condPlace + " goto " + l_end);
+    }
+
+    if (node->children.size() >= 4) {
+        visit(node->children[3]); // Body
+    }
+
+    if (node->children.size() >= 3 && node->children[2]->type != "Empty") {
+        visit(node->children[2]); // Inc
+    }
 
     emit("goto " + l_start);
     emit(l_end + ":");
@@ -403,6 +435,53 @@ void PrettyPrinter::visitWhileStatement(shared_ptr<ASTNode> node) {
         indentLevel--;
     }
     
+    printIndent();
+    sourceCode += "}";
+}
+
+void PrettyPrinter::visitForStatement(shared_ptr<ASTNode> node) {
+    printIndent();
+    std::string oldCode = sourceCode;
+    sourceCode = "";
+    int oldIndent = indentLevel;
+    indentLevel = 0;
+
+    if (node->children.size() >= 1 && node->children[0]->type != "Empty") {
+        visit(node->children[0]);
+    } else {
+        sourceCode += ";";
+    }
+    std::string initCode = sourceCode;
+
+    sourceCode = "";
+    if (node->children.size() >= 2 && node->children[1]->type != "Empty") {
+        visit(node->children[1]);
+    }
+    std::string condCode = sourceCode;
+
+    sourceCode = "";
+    if (node->children.size() >= 3 && node->children[2]->type != "Empty") {
+        visit(node->children[2]);
+        if (!sourceCode.empty() && sourceCode.back() == ';') {
+            sourceCode.pop_back();
+        }
+    }
+    std::string incCode = sourceCode;
+
+    indentLevel = oldIndent;
+    sourceCode = oldCode;
+
+    sourceCode += "for (" + initCode + " " + condCode + "; " + incCode + ") {\n";
+
+    if (node->children.size() >= 4) {
+        indentLevel++;
+        for (auto child : node->children[3]->children) {
+            visit(child);
+            sourceCode += "\n";
+        }
+        indentLevel--;
+    }
+
     printIndent();
     sourceCode += "}";
 }

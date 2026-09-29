@@ -8,6 +8,7 @@ enum class TokenType {
     T_IF,
     T_ELSE,
     T_WHILE,
+    T_FOR,
     T_PRINTLN,
     T_FN,
     T_LET,
