@@ -78,11 +78,13 @@ class TACTranslator : public ASTVisitor {
 private:
     int tempCount = 0;
     int labelCount = 0;
+    std::vector<int> freeTemps;
     std::string lastPlace;
     std::vector<std::string> instructions;
     std::vector<std::string> actionLog;
 
     std::string newTemp();
+    void freeTemp(const std::string& tempName);
     std::string newLabel();
     void emit(const std::string& instruction, const std::string& ruleNote = "");
 

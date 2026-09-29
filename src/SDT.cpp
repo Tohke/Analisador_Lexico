@@ -93,8 +93,29 @@ void PostfixTranslator::visitVariable(shared_ptr<ASTNode> node) {
 // TACTranslator (Gerador de Código de Três Endereços)
 // =====================================================================
 string TACTranslator::newTemp() {
+    if (!freeTemps.empty()) {
+        int t = freeTemps.back();
+        freeTemps.pop_back();
+        return "t" + to_string(t);
+    }
     tempCount++;
     return "t" + to_string(tempCount);
+}
+
+void TACTranslator::freeTemp(const string& tempName) {
+    if (tempName.length() > 1 && tempName[0] == 't') {
+        bool isNum = true;
+        for (size_t i = 1; i < tempName.length(); i++) {
+            if (!isdigit(tempName[i])) {
+                isNum = false;
+                break;
+            }
+        }
+        if (isNum) {
+            int t = stoi(tempName.substr(1));
+            freeTemps.push_back(t);
+        }
+    }
 }
 
 string TACTranslator::newLabel() {
@@ -122,6 +143,7 @@ vector<string> TACTranslator::generate(shared_ptr<ASTNode> node) {
     actionLog.clear();
     tempCount = 0;
     labelCount = 0;
+    freeTemps.clear();
     visit(node);
     return instructions;
 }
@@ -143,6 +165,7 @@ void TACTranslator::visitLetAssignment(shared_ptr<ASTNode> node) {
         visit(node->children[1]);
         string exprPlace = lastPlace;
         emit(varName + " = " + exprPlace);
+        freeTemp(exprPlace);
     }
 }
 
@@ -152,6 +175,7 @@ void TACTranslator::visitAssignment(shared_ptr<ASTNode> node) {
         visit(node->children[1]);
         string exprPlace = lastPlace;
         emit(varName + " = " + exprPlace);
+        freeTemp(exprPlace);
     }
 }
 
@@ -159,6 +183,7 @@ void TACTranslator::visitPrintStatement(shared_ptr<ASTNode> node) {
     if (node->children.size() >= 1) {
         visit(node->children[0]);
         emit("print " + lastPlace);
+        freeTemp(lastPlace);
     } else {
         emit("print " + node->value);
     }
@@ -172,6 +197,7 @@ void TACTranslator::visitIfStatement(shared_ptr<ASTNode> node) {
     string l_end = newLabel();
 
     emit("ifFalse " + condPlace + " goto " + l_else);
+    freeTemp(condPlace);
 
     if (node->children.size() >= 2) {
         visit(node->children[1]); // ThenBlock
@@ -195,6 +221,7 @@ void TACTranslator::visitWhileStatement(shared_ptr<ASTNode> node) {
     string condPlace = lastPlace;
 
     emit("ifFalse " + condPlace + " goto " + l_end);
+    freeTemp(condPlace);
 
     if (node->children.size() >= 2) visit(node->children[1]); // BodyBlock
 
@@ -216,6 +243,7 @@ void TACTranslator::visitForStatement(shared_ptr<ASTNode> node) {
         visit(node->children[1]); // Cond
         string condPlace = lastPlace;
         emit("ifFalse " + condPlace + " goto " + l_end);
+        freeTemp(condPlace);
     }
 
     if (node->children.size() >= 4) {
@@ -240,6 +268,8 @@ void TACTranslator::visitOp(shared_ptr<ASTNode> node) {
     string op = node->type.substr(4); // "Op: +" -> "+"
     string temp = newTemp();
     emit(temp + " = " + leftPlace + " " + op + " " + rightPlace);
+    freeTemp(leftPlace);
+    freeTemp(rightPlace);
     lastPlace = temp;
 }
 
@@ -255,11 +285,13 @@ void TACTranslator::visitCondition(shared_ptr<ASTNode> node) {
         string temp = newTemp();
 
         emit("ifFalse " + leftPlace + " goto " + l_false, "Short-Circuit AND");
+        freeTemp(leftPlace);
 
         if (node->children.size() >= 2) visit(node->children[1]);
         string rightPlace = lastPlace;
 
         emit(temp + " = " + rightPlace);
+        freeTemp(rightPlace);
         emit("goto " + l_end);
 
         emit(l_false + ":");
@@ -279,6 +311,7 @@ void TACTranslator::visitCondition(shared_ptr<ASTNode> node) {
         string temp = newTemp();
 
         emit("ifFalse " + leftPlace + " goto " + l_eval_right, "Short-Circuit OR");
+        freeTemp(leftPlace);
         emit(temp + " = 1");
         emit("goto " + l_end);
 
@@ -287,6 +320,7 @@ void TACTranslator::visitCondition(shared_ptr<ASTNode> node) {
         string rightPlace = lastPlace;
 
         emit(temp + " = " + rightPlace);
+        freeTemp(rightPlace);
 
         emit(l_end + ":");
         lastPlace = temp;
@@ -301,6 +335,8 @@ void TACTranslator::visitCondition(shared_ptr<ASTNode> node) {
 
     string temp = newTemp();
     emit(temp + " = " + leftPlace + " " + op + " " + rightPlace);
+    freeTemp(leftPlace);
+    freeTemp(rightPlace);
     lastPlace = temp;
 }
 
