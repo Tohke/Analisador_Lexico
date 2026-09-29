@@ -212,13 +212,61 @@ void TACTranslator::visitOp(shared_ptr<ASTNode> node) {
 }
 
 void TACTranslator::visitCondition(shared_ptr<ASTNode> node) {
+    string op = node->type.substr(11); // "Condition: <" -> "<"
+
+    if (op == "&&") {
+        if (node->children.size() >= 1) visit(node->children[0]);
+        string leftPlace = lastPlace;
+
+        string l_false = newLabel();
+        string l_end = newLabel();
+        string temp = newTemp();
+
+        emit("ifFalse " + leftPlace + " goto " + l_false, "Short-Circuit AND");
+
+        if (node->children.size() >= 2) visit(node->children[1]);
+        string rightPlace = lastPlace;
+
+        emit(temp + " = " + rightPlace);
+        emit("goto " + l_end);
+
+        emit(l_false + ":");
+        emit(temp + " = 0");
+
+        emit(l_end + ":");
+        lastPlace = temp;
+        return;
+    }
+
+    if (op == "||") {
+        if (node->children.size() >= 1) visit(node->children[0]);
+        string leftPlace = lastPlace;
+
+        string l_eval_right = newLabel();
+        string l_end = newLabel();
+        string temp = newTemp();
+
+        emit("ifFalse " + leftPlace + " goto " + l_eval_right, "Short-Circuit OR");
+        emit(temp + " = 1");
+        emit("goto " + l_end);
+
+        emit(l_eval_right + ":");
+        if (node->children.size() >= 2) visit(node->children[1]);
+        string rightPlace = lastPlace;
+
+        emit(temp + " = " + rightPlace);
+
+        emit(l_end + ":");
+        lastPlace = temp;
+        return;
+    }
+
     if (node->children.size() >= 1) visit(node->children[0]);
     string leftPlace = lastPlace;
 
     if (node->children.size() >= 2) visit(node->children[1]);
     string rightPlace = lastPlace;
 
-    string op = node->type.substr(11); // "Condition: <" -> "<"
     string temp = newTemp();
     emit(temp + " = " + leftPlace + " " + op + " " + rightPlace);
     lastPlace = temp;
