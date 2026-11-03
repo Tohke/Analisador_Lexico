@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
 
@@ -8,106 +10,55 @@
 #include "SemanticAnalyzer.h"
 #include "SDT.hpp"
 #include "Optimizer.h"
+#include "Interpreter.h"
 
 using namespace std;
 
-// =====================================================================
-// CÓDIGOS DE EXEMPLO (descomente o que quiser testar)
-// =====================================================================
-/*  Código teste - Correto
-string code = R"(
-    let num1: i32 = 10;
-    let num2 = 20;
-    let soma = num1 + num2;
+// Código padrão caso nenhum arquivo seja passado
+const string DEFAULT_CODE = R"(
+    let limite: i32 = 5;
+    let mut contador: i32 = 0;
+    let passo = 1;
 
-    if soma >= 30 {
-        println!("{}", soma);
+    while contador < limite {
+        contador = contador + passo;
+    }
+
+    if contador == limite {
+        let mensagem_sucesso = 1;
+        println!("{}", contador);
+    } else {
+        let erro = 0;
+        println!("{}", erro);
     }
 )";
 
-====================================================
-Código teste - Errado (Panic Mode)
-string code = R"(
-let num1: i32 = 10;
-let num2 = ;        // Erro 1: Faltou o valor antes do ponto e vírgula
-let soma = num1 + num2;
-if soma >= 30         // Erro 2: Faltou a chave {
-    println!("{}", soma);
-}
-)";
-====================================================
-SEMANTICA CERTA
-====================================================
-R"(
-        let limite: i32 = 5;
-        let mut contador: i32 = 0;
-        let passo = 1;
+int main(int argc, char* argv[]) {
+    string code;
+    string filename = "";
 
-        while contador < limite {
-            // Atribuição válida, pois 'contador' foi declarado com 'mut'
-            contador = contador + passo;
+    if (argc > 1) {
+        filename = argv[1];
+        ifstream file(filename);
+        if (!file.is_open()) {
+            cerr << "[ERRO] Nao foi possivel abrir o arquivo: " << filename << endl;
+            return 1;
         }
 
-        if contador == limite {
-            let mensagem_sucesso = 1;
-            println!("{}", contador);
-        } else {
-            let erro = 0;
-            println!("{}", erro);
-        }
-    )"
-====================================================
-SEMANTICA ERRADA
-====================================================
-R"(
-            let taxa: i32 = 10;
-            let mut total = 0;
-
-            // ERRO 1: Tentativa de reatribuir valor a uma variável imutável
-            taxa = 20;
-
-            // ERRO 2: Uso de variável que nunca foi declarada ('desconto')
-            total = taxa - desconto;
-
-            // ERRO 3: Redeclaração da mesma variável no mesmo escopo
-            let total = 100;
-
-            if total > 0 {
-                println!("{}", total);
-            }
-        )"
-====================================================
-TESTE DE OTIMIZACAO (Constant Folding, Propagacao, CSE, Simplificacao e Codigo Morto)
-====================================================
-R"(
-        let base: i32 = 2 + 3;
-        let fator: i32 = base * 1;
-        let mut x: i32 = 10;
-        let a = x + fator;
-        let b = x + fator;
-        let codigo_morto = 999;
-        println!("{}", a + b);
-    )"
-*/
-int main() {
-    string code = R"(
-        let limite: i32 = 5;
-        let mut contador: i32 = 0;
-        let passo = 1;
-
-        while contador < limite {
-            // Atribuição válida, pois 'contador' foi declarado com 'mut'
-            contador = contador + passo;
+        // Validação da extensão (.mr ou Micro Rust)
+        if (filename.length() >= 3 && filename.substr(filename.length() - 3) != ".mr") {
+            cout << "[AVISO] Arquivo '" << filename << "' nao possui extensao recomendada (.mr).\n";
         }
 
-        if contador == limite {
-            let mensagem_sucesso = 1;
-            println!("{}", contador);
-        } else {
-            let erro = 0;
-            println!("{}", erro);
-        }
-    )";
+        stringstream buffer;
+        buffer << file.rdbuf();
+        code = buffer.str();
+        cout << "Compilando arquivo: " << filename << "\n\n";
+    } else {
+        cout << "Nenhum arquivo .mr informado. Executando codigo padrao embutido...\n";
+        cout << "Uso: ./bin/compiler <arquivo.mr>\n\n";
+        code = DEFAULT_CODE;
+    }
 
     Scanner scanner(code);
     vector<Token> tokens;
@@ -142,7 +93,7 @@ int main() {
         printAST(astRoot);
 
         if (parser.hadError()) {
-            cout << "\n[ERRO] Compilacao interrompida devido a erros sintaticos." << endl;
+            cerr << "\n[ERRO] Compilacao interrompida devido a erros sintaticos." << endl;
             return 1;
         }
 
@@ -152,7 +103,7 @@ int main() {
 
         SemanticAnalyzer semanticAnalyzer;
         if (!semanticAnalyzer.analyze(astRoot)) {
-            cout << "\n[ERRO] Compilacao interrompida devido a erros semanticos." << endl;
+            cerr << "\n[ERRO] Compilacao interrompida devido a erros semanticos." << endl;
             return 1;
         }
 
@@ -177,7 +128,7 @@ int main() {
         cout << "=========================================" << endl;
 
         TACOptimizer optimizer;
-        optimizer.optimize(tacInstructions);
+        vector<string> optimizedTAC = optimizer.optimize(tacInstructions);
         optimizer.printOptimizationLog();
         optimizer.printOptimizedInstructions();
         optimizer.printComparison();
@@ -191,17 +142,24 @@ int main() {
         prettyPrinter.printSource();
 
         cout << "=========================================" << endl;
-        cout << "Compilacao e Geracao da AST Concluidas!  " << endl;
+        cout << "  FASE 8: BACK-END / EXECUCAO (TAC VM)   " << endl;
+        cout << "=========================================" << endl;
+
+        TACInterpreter interpreter;
+        interpreter.execute(optimizedTAC);
+        interpreter.printExecutionResult();
+        interpreter.printMemoryState();
+
+        cout << "\n=========================================" << endl;
+        cout << "Compilacao e Execucao Concluidas com Sucesso!" << endl;
         cout << "=========================================" << endl;
 
     }
-    catch (exception& e) {
-        cout << "\n[ERRO ENCONTRADO DURANTE A EXECUCAO]" << endl;
+    catch (const exception& e) {
+        cerr << "\n[ERRO ENCONTRADO DURANTE O PROCESSO]" << endl;
         cerr << e.what() << endl;
+        return 1;
     }
 
-    cout << "=========================================" << endl;
-    cout << "Compilacao Concluida!                    " << endl;
-    cout << "=========================================" << endl;
     return 0;
 }

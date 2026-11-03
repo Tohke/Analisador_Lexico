@@ -1,0 +1,18 @@
+// Programa 1: Teste completo de fluxo, loop e condicionais
+let limite: i32 = 5;
+let mut contador: i32 = 0;
+let passo = 1;
+
+while contador < limite {
+    contador = contador + passo;
+}
+
+if contador == limite {
+    let sucesso = 100;
+    println!("{}", contador);
+    println!("{}", sucesso);
+} else {
+    let falha = 0;
+    println!("{}", falha);
+}
+

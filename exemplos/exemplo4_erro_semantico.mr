@@ -1,0 +1,13 @@
+// Programa 4: Erros Semanticos de tipos, mutabilidade e escopo
+let imutavel: i32 = 42;
+let mut valido = 0;
+
+// Erro: tentar modificar variavel sem 'mut'
+imutavel = 99;
+
+// Erro: variavel nao declarada
+valido = imutavel + nao_existe;
+
+// Erro: redeclaracao no mesmo escopo
+let valido = 10;
+

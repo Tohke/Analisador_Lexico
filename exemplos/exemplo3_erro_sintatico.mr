@@ -1,0 +1,8 @@
+// Programa 3: Erros Sintaticos para recuperacao em Modo Panico
+let a: i32 = 10;
+let b = ;
+let c = a + b;
+if c > 5
+    println!("{}", c);
+}
+

@@ -1,0 +1,14 @@
+// Programa 2: Demonstracao das tecnicas de otimizacao e execucao
+// Constant Folding: 10 + 5 -> 15
+// Algebraic Simplification: 15 * 1 -> 15
+// CSE: x + fator repetido
+// DCE: codigo_inutil sera eliminado
+let base: i32 = 10 + 5;
+let fator: i32 = base * 1;
+let mut x: i32 = 20;
+let a = x + fator;
+let b = x + fator;
+let codigo_inutil = 999;
+let resultado = a + b;
+println!("{}", resultado);
+
