@@ -7,6 +7,7 @@
 #include "Parser.h"
 #include "SemanticAnalyzer.h"
 #include "SDT.hpp"
+#include "Optimizer.h"
 
 using namespace std;
 
@@ -75,6 +76,18 @@ R"(
                 println!("{}", total);
             }
         )"
+====================================================
+TESTE DE OTIMIZACAO (Constant Folding, Propagacao, CSE, Simplificacao e Codigo Morto)
+====================================================
+R"(
+        let base: i32 = 2 + 3;
+        let fator: i32 = base * 1;
+        let mut x: i32 = 10;
+        let a = x + fator;
+        let b = x + fator;
+        let codigo_morto = 999;
+        println!("{}", a + b);
+    )"
 */
 int main() {
     string code = R"(
@@ -127,12 +140,21 @@ int main() {
         shared_ptr<ASTNode> astRoot = parser.parseProgram();
 
         printAST(astRoot);
+
+        if (parser.hadError()) {
+            cout << "\n[ERRO] Compilacao interrompida devido a erros sintaticos." << endl;
+            return 1;
+        }
+
         cout << "=========================================" << endl;
         cout << "       FASE 3: ANALISE SEMANTICA         " << endl;
         cout << "=========================================" << endl;
 
         SemanticAnalyzer semanticAnalyzer;
-        semanticAnalyzer.analyze(astRoot);
+        if (!semanticAnalyzer.analyze(astRoot)) {
+            cout << "\n[ERRO] Compilacao interrompida devido a erros semanticos." << endl;
+            return 1;
+        }
 
         cout << "=========================================" << endl;
         cout << "       FASE 4: TRADUCAO SDT (RPN)        " << endl;
@@ -147,11 +169,21 @@ int main() {
         cout << "=========================================" << endl;
 
         TACTranslator tacTranslator;
-        tacTranslator.generate(astRoot);
+        vector<string> tacInstructions = tacTranslator.generate(astRoot);
         tacTranslator.printInstructions();
 
         cout << "=========================================" << endl;
-        cout << "       FASE 6: PRETTY PRINTER            " << endl;
+        cout << "  FASE 6: OTIMIZACAO DE CODIGO (TAC)     " << endl;
+        cout << "=========================================" << endl;
+
+        TACOptimizer optimizer;
+        optimizer.optimize(tacInstructions);
+        optimizer.printOptimizationLog();
+        optimizer.printOptimizedInstructions();
+        optimizer.printComparison();
+
+        cout << "=========================================" << endl;
+        cout << "       FASE 7: PRETTY PRINTER            " << endl;
         cout << "=========================================" << endl;
 
         PrettyPrinter prettyPrinter;

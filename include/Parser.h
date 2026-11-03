@@ -24,11 +24,14 @@ class Parser {
 private:
     std::vector<Token> tokens;
     size_t pos;
+    bool hasErrors;
 
     void synchronize();
 
 public:
     explicit Parser(std::vector<Token> t);
+
+    bool hadError() const { return hasErrors; }
 
     Token peek();
     Token advance();

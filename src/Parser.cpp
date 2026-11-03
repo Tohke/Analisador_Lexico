@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Parser::Parser(vector<Token> t) : tokens(std::move(t)), pos(0) {}
+Parser::Parser(vector<Token> t) : tokens(std::move(t)), pos(0), hasErrors(false) {}
 
 Token Parser::peek() {
     if (pos >= tokens.size()) return tokens.back();
@@ -47,6 +47,7 @@ void Parser::synchronize() {
             case TokenType::T_LET:
             case TokenType::T_IF:
             case TokenType::T_WHILE:
+            case TokenType::T_FOR:
             case TokenType::T_PRINTLN:
             case TokenType::T_RBRACE:
                 return;
@@ -58,7 +59,7 @@ void Parser::synchronize() {
 
 shared_ptr<ASTNode> Parser::parseProgram() {
     auto node = make_shared<ASTNode>("Program");
-    bool hasErrors = false;
+    hasErrors = false;
 
     while (peek().type != TokenType::T_EOF) {
         try {
